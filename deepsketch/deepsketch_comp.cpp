@@ -53,11 +53,12 @@ int main(int argc, char* argv[]) {
 
 		dedup[h] = i;
 
-		if (network.push(f.trace[i], i)) {
+		if (network.push(f.trace[i], i)) {	//if match the batch size of network
 			vector<pair<MYHASH, int>> myhash = network.request();
 			for (int j = 0; j < myhash.size(); ++j) {
 				RECIPE r;
 
+				//what is the difference between first and second?
 				MYHASH& h = myhash[j].first;
 				int index = myhash[j].second;
 
@@ -97,6 +98,7 @@ int main(int argc, char* argv[]) {
 
 				ann.insert(h, index);
 
+				//porcess the duplication
 				while (!dedup_lazy_recipe.empty() && dedup_lazy_recipe.begin()->first < index) {
 					RECIPE rr;
 					set_ref(rr, dedup_lazy_recipe.begin()->second);

@@ -63,6 +63,7 @@ std::vector<std::pair<MYHASH, int>> NetworkHash::request() {
 	torch::Tensor t = torch::from_blob(data, {cnt, BLOCK_SIZE}).to(torch::kCUDA);
 	inputs.push_back(t);
 
+	//it seems here calculates the hash value
 	torch::Tensor output = module.forward(inputs).toTensor().cpu();
 
 	torch::Tensor comp = output.ge(0.0);
@@ -110,7 +111,7 @@ int ANN::request(MYHASH h) {
 
 	// scan list
 	for (int i = linear.size() - 1; i >= 0; --i) {
-		int nowdist = (linear[i] ^ h).count();
+		int nowdist = (linear[i] ^ h).count();	//hammin distance
 		if (dist > nowdist) {
 			dist = nowdist;
 			ret = hashtable[linear[i]].back();
@@ -118,7 +119,7 @@ int ANN::request(MYHASH h) {
 	}
 
 	std::vector<uint8_t> query;
-	for (int i = 0; i < property->dimension; ++i) {
+	for (int i = 0; i < property->dimension; ++i) {	//change into byte array
 		query.push_back((uint8_t)((h << (HASH_SIZE - 8 * i - 8)) >> (HASH_SIZE - 8)).to_ulong());
 	}
 
@@ -132,7 +133,7 @@ int ANN::request(MYHASH h) {
 	for (int i = 0; i < objects.size(); ++i) {
 		int nowdist = objects[i].distance;
 
-		if (dist > nowdist) {
+		if (dist > nowdist) {	//find better result
 			MYHASH now;
 
 			NGT::ObjectSpace& objectSpace = index->getObjectSpace();
@@ -140,14 +141,16 @@ int ANN::request(MYHASH h) {
 			for (int j = 0; j < objectSpace.getDimension(); ++j) {
 				for (int k = 0; k < 8; ++k) {
 					if (object[j] & (1 << k)) {
-						now.flip(8 * j + k);
+						now.flip(8 * j + k);	//copy the hash code into MYHASH now
 					}
 				}
 			}
 			dist = nowdist;
 			ret = hashtable[now].back();
 		}
-		else if (dist == nowdist) {
+		else if (dist == nowdist) {	/** found same result,
+									choose the one with bigger index,
+									but why use bigger index? */
 			MYHASH now;
 
 			NGT::ObjectSpace& objectSpace = index->getObjectSpace();

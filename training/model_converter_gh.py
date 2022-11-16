@@ -234,7 +234,7 @@ class Loader:
         else:
             raise StopIteration
 
-'''
+#'''
 
 train_data = []
 test_data = []
@@ -331,4 +331,4 @@ for i in range(N):
     print(', '.join(map(lambda x: "%.6f" % x, out[i].cpu().detach().numpy()[:10])))
     t = [1 if x >=0.0 else 0 for x in t]
     print(''.join(map(lambda x: str(x), t)))
-'''
+#'''

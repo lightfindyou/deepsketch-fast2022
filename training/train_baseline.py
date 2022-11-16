@@ -97,8 +97,9 @@ class RuntimeLoader:
                     data = f.read()
                 data = [int(d) for d in data]
                 ret1[i] = data
+#               why here append data between / and _? is the file name contains the classification number?
                 ret2.append(int(self.dataset[num + i][self.dataset[num + i].rfind('/') + 1:self.dataset[num + i].rfind('_')]))
-            ret = [(torch.tensor(ret1) - 128) / 128.0, torch.tensor(ret2)]
+            ret = [(torch.tensor(ret1) - 128) / 128.0, torch.tensor(ret2)]  #is this normalization?
 
             for i in range(len(ret)):
                 ret[i] = ret[i].cuda()
@@ -149,7 +150,7 @@ class Loader:
         
         if nowlen > 0:
             self.num += nowlen
-            ret1 = self.alldata[0][num:num+nowlen]
+            ret1 = self.alldata[0][num:num+nowlen] # why here use index?
             ret2 = self.alldata[1][num:num+nowlen]
             ret = [ret1, ret2]
 

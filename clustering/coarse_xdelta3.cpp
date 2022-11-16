@@ -5,7 +5,8 @@
 #include <map>
 #include <queue>
 #include <thread>
-#include "../xxhash.h"
+#include "xxhash.h"
+//#include "../xxhash.h"
 #include "../xdelta3/xdelta3.h"
 #define BLOCK_SIZE 4096
 #define INF 987654321

@@ -3,8 +3,8 @@
 #include <tuple>
 #include <set>
 #include <algorithm>
+#include <xxhash.h>
 #include "../xdelta3/xdelta3.h"
-#include "../xxhash.h"
 #include "../lz4.h"
 #define BLOCK_SIZE 4096
 #define MAX_THREAD 256
@@ -81,7 +81,7 @@ void* func(void* arg) {
 			pthread_mutex_unlock(&mutex);
 			break;
 		}
-		int i = *todo.begin();
+		int i = *todo.begin();	// get the index
 		todo.erase(i);
 		pthread_mutex_unlock(&mutex);
 
@@ -124,8 +124,8 @@ int main(int argc, char* argv[]) {
     set<XXH64_hash_t> dedup;
 	for (int i = 0; i < N; ++i) {
 		XXH64_hash_t h = XXH64(trace[i], BLOCK_SIZE, 0);
-		if (!dedup.count(h)) {
-			todo.insert(i);
+		if (!dedup.count(h)) {	// if not contain same hash(unique), insert
+			todo.insert(i);		//put the index into set
 			dedup.insert(h);
 			unique_block[i] = 1;
 		}

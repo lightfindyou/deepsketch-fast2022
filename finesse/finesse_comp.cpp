@@ -5,10 +5,10 @@
 #include <map>
 #include <cmath>
 #include <algorithm>
+#include <xxhash.h>
 #include "finesse.h"
 #include "../compress.h"
 #include "../lz4.h"
-#include "../xxhash.h"
 #include "../xdelta3/xdelta3.h"
 #define INF 987654321
 using namespace std;
