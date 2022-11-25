@@ -111,6 +111,7 @@ int Finesse::request(unsigned char* ptr) {
 		superfeature[i] = XXH64(temp, sizeof(uint64_t) * FEATURE_NUM / SF_NUM, 0);
 	}
 
+	//why here use random number?
 	uint32_t r = full_uint32_t(gen2) % SF_NUM;
 	for (int i = 0; i < SF_NUM; ++i) {
 		int index = (r + i) % SF_NUM;
@@ -124,6 +125,7 @@ int Finesse::request(unsigned char* ptr) {
 // insert "prev calculated" sf: label
 void Finesse::insert(int label) {
 	for (int i = 0; i < SF_NUM; ++i) {
+		//xzjin why here use seperate table for the super feature in different position?
 		sfTable[i][superfeature[i]].push_back(label);
 	}
 }
