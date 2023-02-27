@@ -6,9 +6,9 @@
 #include <cmath>
 #include <algorithm>
 #include "../compress.h"
-#include "deepsketch.h"
+#include "./deepsketch.h"
 #include "../lz4.h"
-#include "../xxhash.h"
+#include "xxhash.h"
 extern "C" {
 	#include "../xdelta3/xdelta3.h"
 }
@@ -78,8 +78,7 @@ int main(int argc, char* argv[]) {
 					set_flag(r, 0b11);
 					f.write_file(delta_compressed, dcomp_ann);
 					total += dcomp_ann;
-				}
-				else {
+				} else {
 					if (comp_self < BLOCK_SIZE) { // self compress
 						set_size(r, (unsigned long)(comp_self - 1));
 						set_flag(r, 0b01);
@@ -135,15 +134,13 @@ int main(int argc, char* argv[]) {
 				set_flag(r, 0b11);
 				f.write_file(delta_compressed, dcomp_ann);
 				total += dcomp_ann;
-			}
-			else {
+			} else {
 				if (comp_self < BLOCK_SIZE) { // self compress
 					set_size(r, (unsigned long)(comp_self - 1));
 					set_flag(r, 0b01);
 					f.write_file(compressed, comp_self);
 					total += comp_self;
-				}
-				else { // no compress
+				} else { // no compress
 					set_flag(r, 0b00);
 					f.write_file(f.trace[index], BLOCK_SIZE);
 					total += BLOCK_SIZE;

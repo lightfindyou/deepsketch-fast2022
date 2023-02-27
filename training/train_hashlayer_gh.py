@@ -283,7 +283,8 @@ def test(model, test_loader, epoch, print_progress=False):
         cnt = 0
         for data, target in test_loader:
             output, _, _ = model(data)
-            prob, label = output.topk(5, 1, True, True)
+#            prob, label = output.topk(5, 1, True, True)
+            prob, label = output.topk(1, 1, True, True)
             
             expanded = target.view(target.size(0), -1).expand_as(label)
             compare = label.eq(expanded).float()
@@ -303,10 +304,10 @@ def test(model, test_loader, epoch, print_progress=False):
 
 
 def do_test(sampling, print_progress=False):
-    if sampling == 1.0:
-        it = RuntimeLoader(test_data)
-    else:
-        it = Loader(test_data, sampling)
+#    if sampling == 1.0:
+#        it = RuntimeLoader(test_data)
+#    else:
+    it = Loader(test_data, sampling)
 
     test(hidden_model, it, epoch, print_progress)
 
@@ -401,11 +402,11 @@ class HashNetwork(torch.nn.Module):
         else:
             x = self.layers[0](x)
 
-        x = self.fc_plus(x)
-        code = GreedyHashLoss.Hash.apply(x)
+        x = self.fc_plus(x)     #after conversion directly use sign? why NO activtion function?
+        code = GreedyHashLoss.Hash.apply(x) #get the sign of x
         output = self.fc(code)
 
-        return output, x, code
+        return output, x, code  #the final output, the code before hash and the sign hash
         
 
 # Load basemodel
@@ -415,6 +416,7 @@ basemodel.load_state_dict(torch.load(basemodel_filename))
 
 hidden_model = HashNetwork(basemodel)
 hidden_model= hidden_model.to(device)
+print(hidden_model)
 #optimizer = optim.Adam(hidden_model.parameters(), lr = 0.00001) #weight_decay=0.001)
 optimizer = optim.SGD(
         hidden_model.parameters(),
@@ -438,11 +440,13 @@ for epoch in range(1, 351):
     #for image, label, ind in train_data_tensor:
     for batch_idx, (data, target) in enumerate(train_data_tensor):
         optimizer.zero_grad()
+        #the final output, the code before hash and the sign hash
         outputs, feature, _ = hidden_model(data)
 
-        loss = criterion(
-                outputs,
-                target,
+        loss = criterion(   #here loss calculate the cross entrpy loss of outputs and target,
+                            # but what is output and target?
+                outputs,    # the cross entropy between output and target and the deviate of feature from 1.
+                target,     #                     (the final output)                  (the code before hash)
                 feature)
         train_loss += loss.item()
 

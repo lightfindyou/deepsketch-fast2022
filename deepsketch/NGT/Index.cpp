@@ -14,14 +14,13 @@
 // limitations under the License.
 //
 
-#include "NGT/Index.h"
-
-#include "NGT/Common.h"
-#include "NGT/GraphReconstructor.h"
-#include "NGT/ObjectSpaceRepository.h"
-#include "NGT/Thread.h"
-#include "NGT/Version.h"
-#include "NGT/defines.h"
+#include "Index.h"
+#include "Common.h"
+#include "GraphReconstructor.h"
+#include "ObjectSpaceRepository.h"
+#include "Thread.h"
+#include "Version.h"
+#include "defines.h"
 
 using namespace std;
 using namespace NGT;

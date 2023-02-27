@@ -14,11 +14,15 @@
 // limitations under the License.
 //
 
-#include "NGT/Command.h"
+//#include "NGT/Command.h"
+//#include "NGT/GraphOptimizer.h"
+//#include "NGT/GraphReconstructor.h"
+//#include "NGT/Optimizer.h"
 
-#include "NGT/GraphOptimizer.h"
-#include "NGT/GraphReconstructor.h"
-#include "NGT/Optimizer.h"
+#include "Command.h"
+#include "GraphOptimizer.h"
+#include "GraphReconstructor.h"
+#include "Optimizer.h"
 
 using namespace std;
 

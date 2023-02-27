@@ -28,11 +28,11 @@
 #include <unordered_set>
 #include <vector>
 
-#include "NGT/Common.h"
-#include "NGT/Graph.h"
-#include "NGT/Thread.h"
-#include "NGT/Tree.h"
-#include "NGT/defines.h"
+#include "Common.h"
+#include "Graph.h"
+#include "Thread.h"
+#include "Tree.h"
+#include "defines.h"
 
 namespace NGT {
 

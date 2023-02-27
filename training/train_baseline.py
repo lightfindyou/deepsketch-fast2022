@@ -46,9 +46,10 @@ def log(logstr):
 # Read data
 from glob import glob
 original_data = glob(os.path.join(path, '*/*'))
-log("Original data:" + str(len(original_data)))
 
 numCluster = len(original_data) // 100
+log("Original data:" + str(len(original_data)))
+log("numCluster: "+str(numCluster))
 
 train_data = []
 test_data = []
@@ -56,7 +57,9 @@ test_data = []
 random.seed(1)
 for i in range(numCluster):
     name = glob(os.path.join(path,'{}/*'.format(i)))
+    print("i:"+str(i))
     random.shuffle(name)
+    print("name:"+str(name))
     n = len(name)
     
     train_data += name[:n // 10]
@@ -138,7 +141,12 @@ class Loader:
             data = [int(d)for d in data]
             ret1[i] = data
             fn = self.dataset[i]
-            ret2.append(int(fn[fn.rfind('/') + 1:fn.rfind('_')]))
+            log("fn: "+fn)
+#            tmp = fn[fn.rfind('/') + 1:fn.rfind('_')]
+            tmp = fn[:fn.rfind('/')]
+            tmp =tmp[tmp.rfind('/') + 1:]
+            ret2.append(int(tmp))   #this is the target in test
+        log("ret2: "+str(ret2))
         return ((torch.tensor(ret1)-128)/128.0), torch.tensor(ret2), alllen
 
     def __iter__(self):
@@ -175,14 +183,17 @@ def test(model, test_loader, epoch, print_progress=False):
         cnt = 0
         for data, target in test_loader:
             output = model(data)
-            prob, label = output.topk(5, 1, True, True)
+            prob, label = output.topk(1, 1, True, True)
             
             expanded = target.view(target.size(0), -1).expand_as(label)
             compare = label.eq(expanded).float()
+            log("label: "+str(label))
+            log("expanded: "+str(expanded))
+            log("compare: "+str(compare))
             
             total += len(data)
             correct_1 += int(compare[:,:1].sum())
-            correct_5 += int(compare[:,:5].sum())
+#            correct_5 += int(compare[:,:5].sum())
 
             cnt += 1
             if print_progress and (cnt % 1000 == 0):
@@ -195,10 +206,10 @@ def test(model, test_loader, epoch, print_progress=False):
 
 
 def do_test(sampling, print_progress=False):
-    if sampling == 1.0:
-        it = RuntimeLoader(test_data)
-    else:
-        it = Loader(test_data, sampling)
+#    if sampling == 1.0:
+#        it = RuntimeLoader(test_data)
+#    else:
+    it = Loader(test_data, sampling)
 
     test(hidden_model, it, epoch, print_progress)
 
@@ -268,6 +279,7 @@ optimizer = optim.Adam(hidden_model.parameters(), lr = _lr, weight_decay=1e-4)
 loss = []
 prevtime = time.time()
 prevloss = []
+#print(hidden_model)
 for epoch in range(1, 351):
     train_loss = 0
     for batch_idx, (data, target) in enumerate(train_data_tensor):

@@ -110,7 +110,8 @@ class RevisedNetwork(torch.nn.Module):
         self.conv_layers = nn.ModuleList(self.conv_layers)
         self.layers = nn.ModuleList(self.layers)
 
-        self.fc_plus = nn.Linear(_denseSize1, _hashSize)
+#        self.fc_plus = nn.Linear(_denseSize1, _hashSize)
+        self.fc_plus = nn.Linear(_denseSize2, _hashSize)
         self.fc = nn.Linear(_hashSize, numCluster, bias=False)
 
 
@@ -122,7 +123,7 @@ class RevisedNetwork(torch.nn.Module):
         x = x.view(x.shape[0], -1)
 #for l in self.layers:
 #            x = l(x)
-        x = self.layers[0](x)
+        x = self.layers[0](x)   #only execute the first layer
 
         x = self.fc_plus(x)
         code = GreedyHashLoss.Hash.apply(x)
@@ -132,6 +133,7 @@ class RevisedNetwork(torch.nn.Module):
 
 print("Model Loading")
 model = RevisedNetwork()
+print(model)
 model.load_state_dict(torch.load(filename))
 model.eval()
 
@@ -140,7 +142,9 @@ class InferNetwork(torch.nn.Module):
         super(InferNetwork, self).__init__()
         self.conv_layers = None
         self.layers = None
-        self.fc_plus = None
+#        self.fc_plus = None
+        #since layers only contain the first layer, adjust the input size into 4096
+        self.fc_plus = nn.Linear(_denseSize1, _hashSize)
         
     def forward(self, x):
         x = x.unsqueeze(dim=1)
@@ -159,8 +163,9 @@ class InferNetwork(torch.nn.Module):
 print("Model Saving to PT")
 infer = InferNetwork()
 infer.conv_layers = model.conv_layers
+#here only the first layer, so the dimision is not suitable.
 infer.layer = model.layers[0]
-infer.fc_plus = model.fc_plus 
+#infer.fc_plus = model.fc_plus 
 infer.eval()
 sm = torch.jit.script(infer)
 sm.save("{}.pt".format(filename))
@@ -321,7 +326,8 @@ def read_blkfile_to_tensor(filename, n):
     return ((torch.tensor(ret)-128)/128.0)
  
 N = 100
-inp = read_blkfile_to_tensor("/home/compu/jeonggyun/ts/build/mix10", N)
+#inp = read_blkfile_to_tensor("/home/compu/jeonggyun/ts/build/mix10", N)
+inp = read_blkfile_to_tensor("/home/xzjin/src/deepsketch-fast2022/training/blocks", N)
 #print(inp[0])
 with torch.no_grad():
     out = infer.forward(inp.cuda())
