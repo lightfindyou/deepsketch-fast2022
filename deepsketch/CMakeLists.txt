@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.16)
 #set(CMAKE_CXX_COMPILER clang++-13)
 
 project(deepSketch)
-
+set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_PREFIX_PATH /home/xzjin/.local/lib/python3.8/site-packages/torch)
 find_package(Torch REQUIRED)

@@ -46,7 +46,10 @@ void read_file(char* name) {
 
 void restore_result(char* name) {
 	FILE* f = fopen(file_name_temp, "rt");
-	if (f == NULL) return;
+	if (f == NULL){
+		std::cout<<"open file: "<<file_name_temp<<" failed."<<endl;
+		return;
+	}
 
 	int num, ref, size;
 	while (fscanf(f, "%d %d %d", &num, &ref, &size) == 3) {
@@ -98,7 +101,7 @@ void* func(void* arg) {
 		}
 
 		pthread_mutex_lock(&mutex);
-		result.push_back({i, ref, size});
+		result.push_back({i, ref, size});	//block num, base block num and compressed size
 		fprintf(fp_temp, "%d %d %d\n", i, ref, size);
 		if (i % 100 == 0) {
 			fprintf(stderr, "%d/%d\r", i, N);
@@ -125,7 +128,7 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < N; ++i) {
 		XXH64_hash_t h = XXH64(trace[i], BLOCK_SIZE, 0);
 		if (!dedup.count(h)) {	// if not contain same hash(unique), insert
-			todo.insert(i);		//put the index into set
+			todo.insert(i);		//put the index into todo and dedup set
 			dedup.insert(h);
 			unique_block[i] = 1;
 		}

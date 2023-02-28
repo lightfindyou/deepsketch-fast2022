@@ -62,16 +62,20 @@ int main(int argc, char* argv[]) {
 				MYHASH& h = myhash[j].first;
 				int index = myhash[j].second;
 
-				int comp_self = LZ4_compress_default(f.trace[index], compressed, BLOCK_SIZE, 2 * BLOCK_SIZE);
+				int comp_self = LZ4_compress_default(f.trace[index], compressed,
+							 BLOCK_SIZE, 2 * BLOCK_SIZE);
 				int dcomp_ann = INF, dcomp_ann_ref;
 				dcomp_ann_ref = ann.request(h);
 
 				if (dcomp_ann_ref != -1) {
-					dcomp_ann = xdelta3_compress(f.trace[index], BLOCK_SIZE, f.trace[dcomp_ann_ref], BLOCK_SIZE, delta_compressed, 1);
+					dcomp_ann = xdelta3_compress(f.trace[index], BLOCK_SIZE,
+							 f.trace[dcomp_ann_ref], BLOCK_SIZE,
+							 delta_compressed, 1);
 				}
 
 				set_offset(r, total);
 
+				//choose the minimum type of compress to store
 				if (min(comp_self, BLOCK_SIZE) > dcomp_ann) { // delta compress
 					set_size(r, (unsigned long)(dcomp_ann - 1));
 					set_ref(r, dcomp_ann_ref);
