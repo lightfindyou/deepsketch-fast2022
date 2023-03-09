@@ -328,7 +328,7 @@ void bruteForceCluster(vector<int>& todo, vector<vector<int>>& cluster, int thre
 	return;
 }
 
-void read_file(char* name) {
+void readFile(char* name) {
 	N = 0;
 	trace.clear();
 
@@ -355,7 +355,7 @@ int main(int argc, char* argv[]) {
 		
 	NUM_THREAD = atoi(argv[2]);
 
-	read_file(argv[1]);
+	readFile(argv[1]);
 
 	int sz, t;
 	while (scanf("%d", &sz) == 1) {

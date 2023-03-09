@@ -52,7 +52,7 @@ void print_cluster(vector<vector<int>>& cluster) {
 	printf("\n");
 }
 
-void read_file(char* name) {
+void readFile(char* name) {
 	N = 0;
 	trace.clear();
 	int blockNum = 0;
@@ -92,6 +92,6 @@ int main(int argc, char* argv[]) {
 		exit(0);
 	}
 
-	read_file(argv[1]);
+	readFile(argv[1]);
 	print_cluster(cluster);
 }

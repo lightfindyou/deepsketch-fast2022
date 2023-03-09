@@ -1,3 +1,8 @@
+#include <assert.h>
+#include <math.h>
+#include <memory.h>
+#include <openssl/md5.h>
+#include <stdint.h>
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -6,23 +11,145 @@
 #include <queue>
 #include <thread>
 #include <sys/stat.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <string.h>
 #include "xxhash.h"
 //#include "../xxhash.h"
 #include "../xdelta3/xdelta3.h"
-#define BLOCK_SIZE 4096
 #define INF 987654321
 #define COARSE_T 2048
 #define MAX_THREAD 256
 using namespace std;
 
+#define SymbolCount 256
+#define DigistLength 16
+#define SeedLength 64
+#define MaxChunkSizeOffset 3
+#define MinChunkSizeOffset 2
+
 int N = 0;
 int NUM_THREAD;
-vector<char*> trace;
-char buf[MAX_THREAD][BLOCK_SIZE];
-char compressed[MAX_THREAD][2 * BLOCK_SIZE];
+vector<tuple<char*, int>> trace;
+char compressed[MAX_THREAD][8198];
+uint64_t g_gear_matrix_fast[SymbolCount];
+
+uint64_t MaskS_fast;
+uint64_t MaskL_fast;
+
+enum{
+    Mask_64B,
+    Mask_128B,
+    Mask_256B,
+    Mask_512B,
+    Mask_1KB,
+    Mask_2KB,
+    Mask_4KB,
+    Mask_8KB,
+    Mask_16KB,
+    Mask_32KB,
+    Mask_64KB,
+    Mask_128KB
+};
+
+uint64_t g_condition_mask[] = {
+    //Do not use 1-32B, for aligent usage
+        0x0000000000000000,// 1B
+        0x0000000001000000,// 2B
+        0x0000000003000000,// 4B
+        0x0000010003000000,// 8B
+        0x0000090003000000,// 16B
+        0x0000190003000000,// 32B
+
+        0x0000590003000000,// 64B
+        0x0000590003100000,// 128B
+        0x0000590003500000,// 256B
+        0x0000590003510000,// 512B
+        0x0000590003530000,// 1KB
+        0x0000590103530000,// 2KB
+        0x0000d90103530000,// 4KB
+        0x0000d90303530000,// 8KB
+        0x0000d90303531000,// 16KB
+        0x0000d90303533000,// 32KB
+        0x0000d90303537000,// 64KB
+        0x0000d90703537000// 128KB
+};
+
+static int chunkMax, chunkAvg, chunkMin;
+
+void fastcdc_init(int chunkSize){
+    char seed[SeedLength];
+    int index;
+    for(int i=0; i<SymbolCount; i++){
+        for(int j=0; j<SeedLength; j++){
+            seed[j] = i;
+        }
+
+        g_gear_matrix_fast[i] = 0;
+        unsigned char md5_result[DigistLength];
+
+        MD5_CTX md5_ctx;
+        MD5_Init(&md5_ctx);
+        MD5_Update(&md5_ctx, seed, SeedLength);
+        MD5_Final(md5_result, &md5_ctx);
+
+        memcpy(&g_gear_matrix_fast[i], md5_result, sizeof(uint64_t));
+    }
+
+//    chunkMin = 2048;
+//   chunkMax = 65536;
+//    chunkAvg = expectCS;
+	chunkAvg = chunkSize;
+	chunkMax = chunkSize*2;
+	chunkMin = chunkSize/8;
+    index = log2(chunkAvg);
+    assert(index>6);
+    assert(index<17);
+    MaskS_fast = g_condition_mask[index+1];
+    MaskL_fast = g_condition_mask[index-1];
+}
+
+
+int fastcdc_chunk_data(unsigned char *p, int n){
+
+    uint64_t fingerprint=0;
+    //uint64_t digest __attribute__((unused));
+    //int i=chunkMin;//, Mid=chunkMin + 8*1024;
+    int i=0;//, Mid=chunkMin + 8*1024;
+    int Mid = chunkAvg;
+    //return n;
+
+    if(n<=chunkMin) //the minimal  subChunk Size.
+        return n;
+    //windows_reset();
+    if(n >chunkMax)
+        n =chunkMax;
+    else if(n<Mid)
+        Mid = n;
+
+    while(i<Mid){
+        fingerprint = (fingerprint<<1) + (g_gear_matrix_fast[p[i]]);
+        if ((!(fingerprint & MaskS_fast /*0x0000d90f03530000*/))) { //AVERAGE*2, *4, *8
+            return i;
+        }
+        i++;
+    }
+
+    while(i<n){
+        fingerprint = (fingerprint<<1) + (g_gear_matrix_fast[p[i]]);
+        if ((!(fingerprint & MaskL_fast /*0x0000d90003530000*/))) { //Average/2, /4, /8
+            return i;
+        }
+        i++;
+    }
+    //printf("\r\n==chunking FINISH!\r\n");
+    return i;
+}
 
 int do_xdelta3(int i, int j, int id) {
-	return xdelta3_compress(trace[i], BLOCK_SIZE, trace[j], BLOCK_SIZE, compressed[id], 1);
+	return xdelta3_compress(std::get<0>(trace[i]), std::get<1>(trace[i]),
+		 std::get<0>(trace[j]), std::get<1>(trace[j]), compressed[id], 1);
 }
 
 typedef tuple<int, int, int, int> BFinfo;
@@ -189,7 +316,7 @@ void print_cluster(vector<vector<int>>& cluster) {
 			}
 //			cout<<"block number: "<<u<<endl;
 //			cout<<"trace address: 0x"<<std::hex<<trace[u]<<endl;
-			fwrite(trace[u], BLOCK_SIZE, 1, file);
+			fwrite(std::get<0>(trace[u]), std::get<1>(trace[u]), 1, file);
 			isErr = fclose(file);
 			if(isErr){
 				perror("error on close file");
@@ -200,38 +327,94 @@ void print_cluster(vector<vector<int>>& cluster) {
 	printf("\n");
 }
 
-void read_file(char* name) {
-	N = 0;
+void readFile(char* fileName, int s) {
 	trace.clear();
-
-	FILE* f = fopen(name, "rb");
-	while (1) {
-		char* ptr = new char[BLOCK_SIZE];
-		trace.push_back(ptr);
-		int now = fread(trace[N++], 1, BLOCK_SIZE, f);
-		if (!now) {
-			free(trace.back());
-			trace.pop_back();
-			N--;
-			break;
-		}
+	int fileSize = s;
+	FILE* f = fopen(fileName, "rb");
+	if(!f){
+		perror("open file failed");
+	}
+	char* data = new char[s+1024];
+	fileSize = fread(data, 1, s, f);
+	while (fileSize>=0) {
+		int chunkSize = fastcdc_chunk_data((unsigned char*)data, fileSize);
+		fileSize -= chunkSize;
+		auto const chunk = std::make_tuple(data, chunkSize);
+		trace.push_back(chunk);
+		N++;
 	}
 	fclose(f);
 }
 
+void joinPath(char* path, char* file){
+	strcat(path, "/");
+	strcat(path, file);
+}
+
+void joinPathtoStr(char* target, char* path, char* file){
+	strcpy(target, path);
+	strcat(target, "/");
+	strcat(target, file);
+}
+
+void treaverse(char* name){
+        DIR* dir;
+        struct dirent *ent;
+        struct stat states;
+
+        dir = opendir(name);
+		if(!dir){
+			perror("open dir failed");
+		}
+
+		ent=readdir(dir);
+		if(!ent){
+			perror("read dir failed");
+		}
+				
+		do{
+			char filePath[1025];
+			joinPathtoStr(filePath, name, ent->d_name);
+//			printf("stat file: %s\n", filePath);
+            int t = stat(filePath, &states);
+			if(t){
+				perror("stat dir failed");
+			}
+            if(!strcmp(".", ent->d_name) || !strcmp("..", ent->d_name)){
+                goto nextFile;
+            }else{
+//                printf("%s/%s\n",name,ent->d_name);
+				readFile(filePath, states.st_size);
+                if(S_ISDIR(states.st_mode)){
+                    treaverse(filePath);
+                }
+            };
+
+nextFile:
+			ent = readdir(dir);
+//			printf("name: %s, ent: %lx\n", name, ent);
+        }while(ent);
+
+        closedir(dir);
+}
+
 int main(int argc, char* argv[]) {
+	char path[1024];
 	if (argc != 3) {
 		cerr << "usage: ./coarse [input_file] [num_thread]\n";
 		exit(0);
 	}
 	NUM_THREAD = atoi(argv[2]);
+	strcpy(path, argv[1]);
+	fastcdc_init(4096);
 
-	read_file(argv[1]);
+	treaverse(path);
+	cout<<"read file over."<<endl;
 
 	set<uint64_t> dedup;
 	vector<int> unique_list;
 	for (int i = 0; i < N; ++i) {
-		XXH64_hash_t h = XXH64(trace[i], BLOCK_SIZE, 0);
+		XXH64_hash_t h = XXH64(std::get<0>(trace[i]), std::get<1>(trace[i]), 0);
 
 		if (dedup.count(h)) continue;
 		else {

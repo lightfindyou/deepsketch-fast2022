@@ -56,6 +56,7 @@ int main(int argc, char* argv[]) {
 		if (network.push(f.trace[i], i)) {	//if match the batch size of network
 			vector<pair<MYHASH, int>> myhash = network.request();
 			for (int j = 0; j < myhash.size(); ++j) {
+				cout<<"procssing block: "<<i<<endl;
 				RECIPE r;
 
 				//first is hash value, second is chunk id

@@ -28,7 +28,7 @@ set<int> todo;
 pthread_mutex_t mutex;
 vector<i3> result;
 
-void read_file(char* name) {
+void readFile(char* name) {
 	FILE* f = fopen(name, "rb");
 	while (1) {
         char* ptr = new char[BLOCK_SIZE];
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
 
 	int NUM_THREAD = atoi(argv[2]);
 
-    read_file(argv[1]);
+    readFile(argv[1]);
 	unique_block.resize(N, 0);
 
     set<XXH64_hash_t> dedup;

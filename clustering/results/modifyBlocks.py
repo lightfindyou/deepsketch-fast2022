@@ -36,7 +36,7 @@ for i in range(dirNum):
     files = glob(os.path.join(dirs[i], '*'))
     fileNum = len(files)
     if fileNum < 4 :
-        targetFileNum = random.randint(4,6)
+        targetFileNum = random.randint(21,39)
         #generage new files
         for j in range(fileNum, targetFileNum):
             fileIdx = random.randint(0, fileNum-1)
@@ -48,9 +48,9 @@ for i in range(dirNum):
             #update each new file with random data
             for k in range (changeNum):
                 changeLen = random.randint(1, 200)
-                changePos = random.randint(0, os.path.getsize(destFileName) - changeLen - 1)
 #                data = random.randbytes(changeLen)
                 data =str(os.urandom(changeLen))
+                changePos = random.randint(0, os.path.getsize(destFileName) - len(data) - 1)
                 f.seek(changePos)
                 f.write(data)
             f.close()

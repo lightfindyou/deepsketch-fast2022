@@ -193,7 +193,7 @@ def test(model, test_loader, epoch, print_progress=False):
             
             total += len(data)
             correct_1 += int(compare[:,:1].sum())
-#            correct_5 += int(compare[:,:5].sum())
+            correct_5 += int(compare[:,:5].sum())
 
             cnt += 1
             if print_progress and (cnt % 1000 == 0):

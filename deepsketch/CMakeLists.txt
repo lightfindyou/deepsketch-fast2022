@@ -5,7 +5,9 @@ cmake_minimum_required (VERSION 3.16)
 project(deepSketch)
 set(CMAKE_BUILD_TYPE Debug)
 
-set(CMAKE_PREFIX_PATH /home/xzjin/.local/lib/python3.8/site-packages/torch)
+#set(CMAKE_PREFIX_PATH /home/xzjin/.local/lib/python3.8/site-packages/torch)
+set(CMAKE_PREFIX_PATH "/home/xzjin/.local/lib/python3.8/site-packages/torch/share/cmake/Torch")
+
 find_package(Torch REQUIRED)
 #find_package(xxhash REQUIRED)
 message(STATUS "Torch_FOUND: ${Torch_FOUND}")
