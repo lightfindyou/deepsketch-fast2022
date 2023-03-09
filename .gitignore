@@ -73,6 +73,7 @@ dataset
 deepsketch/build/
 training/model/
 training/preprocessed_data/
+clustering/results/
 
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,cmake,linux

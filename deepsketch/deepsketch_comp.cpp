@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 			for (int j = 0; j < myhash.size(); ++j) {
 				RECIPE r;
 
-				//what is the difference between first and second?
+				//first is hash value, second is chunk id
 				MYHASH& h = myhash[j].first;
 				int index = myhash[j].second;
 

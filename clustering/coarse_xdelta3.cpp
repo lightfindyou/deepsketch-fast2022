@@ -5,6 +5,7 @@
 #include <map>
 #include <queue>
 #include <thread>
+#include <sys/stat.h>
 #include "xxhash.h"
 //#include "../xxhash.h"
 #include "../xdelta3/xdelta3.h"
@@ -168,10 +169,31 @@ void bruteForceCluster(vector<int>& todo, vector<vector<int>>& cluster, int thre
 }
 
 void print_cluster(vector<vector<int>>& cluster) {
+	char* basePath = "/home/xzjin/src/deepsketch-fast2022/clustering/results/blocks";
 	for (int i = 0; i < cluster.size(); ++i) {
 		printf("%d ", cluster[i].size());
+		char dir[256];
+		sprintf(dir, "%s/%d", basePath, i);
+		int isErr = mkdir(dir, 0777);
+		if(isErr && (errno != EEXIST)){
+			perror("error on mkdir");
+		}
 		for (int u: cluster[i]) {
+			char fileName[256];
 			printf("%d ", u);
+
+			sprintf(fileName, "%s/%d", dir, u);
+			FILE* file = fopen(fileName, "w");
+			if(!file){
+				perror("error on openfile");
+			}
+//			cout<<"block number: "<<u<<endl;
+//			cout<<"trace address: 0x"<<std::hex<<trace[u]<<endl;
+			fwrite(trace[u], BLOCK_SIZE, 1, file);
+			isErr = fclose(file);
+			if(isErr){
+				perror("error on close file");
+			}
 		}
 		printf("\n");
 	}
