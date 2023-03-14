@@ -328,22 +328,25 @@ void print_cluster(vector<vector<int>>& cluster) {
 }
 
 void readFile(char* fileName, int s) {
-	trace.clear();
 	int fileSize = s;
+//	cout<<"chunking file:"<<fileName<<" file size: "<<s<<endl;
 	FILE* f = fopen(fileName, "rb");
 	if(!f){
 		perror("open file failed");
 	}
 	char* data = new char[s+1024];
 	fileSize = fread(data, 1, s, f);
-	while (fileSize>=0) {
+	while (fileSize>0) {
 		int chunkSize = fastcdc_chunk_data((unsigned char*)data, fileSize);
 		fileSize -= chunkSize;
+		data = &data[chunkSize];
+//		cout<<"chunking size:"<<chunkSize<<" left size: "<<fileSize<<endl;
 		auto const chunk = std::make_tuple(data, chunkSize);
 		trace.push_back(chunk);
 		N++;
 	}
 	fclose(f);
+//	cout<<"chunking file:"<<fileName<<"over"<<endl;
 }
 
 void joinPath(char* path, char* file){
@@ -371,7 +374,7 @@ void treaverse(char* name){
 		if(!ent){
 			perror("read dir failed");
 		}
-				
+
 		do{
 			char filePath[1025];
 			joinPathtoStr(filePath, name, ent->d_name);
@@ -404,12 +407,15 @@ int main(int argc, char* argv[]) {
 		cerr << "usage: ./coarse [input_file] [num_thread]\n";
 		exit(0);
 	}
+	int uniqueChunk = 0;
+
+	trace.clear();
 	NUM_THREAD = atoi(argv[2]);
 	strcpy(path, argv[1]);
 	fastcdc_init(4096);
 
 	treaverse(path);
-	cout<<"read file over."<<endl;
+	cout<<"read file over. blocks num:"<<N<<endl;
 
 	set<uint64_t> dedup;
 	vector<int> unique_list;
@@ -418,10 +424,12 @@ int main(int argc, char* argv[]) {
 
 		if (dedup.count(h)) continue;
 		else {
+			uniqueChunk++;
 			dedup.insert(h);
 			unique_list.push_back(i);
 		}
 	}
+	cout<<"unique chunk num: "<<uniqueChunk<<endl;
 
 	vector<vector<int>> cluster;
 	bruteForceCluster(unique_list, cluster, COARSE_T);

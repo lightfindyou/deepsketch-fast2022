@@ -57,13 +57,13 @@ test_data = []
 random.seed(1)
 for i in range(numCluster):
     name = glob(os.path.join(path,'{}/*'.format(i)))
-    print("i:"+str(i))
+#    print("i:"+str(i))
     random.shuffle(name)
-    print("name:"+str(name))
+#    print("name:"+str(name))
     n = len(name)
     
-    train_data += name[:n // 10]
-    test_data += name[n // 10:]
+    train_data += name[:n // 8]
+    test_data += name[n // 8:]
 
 log("Train data: " + str(len(train_data)))
 log("Test data: " + str(len(test_data)))
@@ -99,6 +99,8 @@ class RuntimeLoader:
                 with open(self.dataset[num + i], 'rb') as f:
                     data = f.read()
                 data = [int(d) for d in data]
+#                data = np.pad(data, (0, 8192 - len(data)), 'constant')
+                data += [0] * (8192 - len(data))
                 ret1[i] = data
 #               why here append data between / and _? is the file name contains the classification number?
                 ret2.append(int(self.dataset[num + i][self.dataset[num + i].rfind('/') + 1:self.dataset[num + i].rfind('_')]))
@@ -139,15 +141,24 @@ class Loader:
             with open(self.dataset[i], 'rb') as f:
                 data = f.read()
             data = [int(d)for d in data]
+#            data = np.pad(data, (0, 8192 - len(data)), 'constant')
+            originLen = len(data)
+            data += [0] * (8192 - len(data))
+            if(len(data) != 8192):
+                print("len of data error: "+originLen+" to "+len(data))
+                exit(0)
             ret1[i] = data
             fn = self.dataset[i]
-            log("fn: "+fn)
+#            log("fn: "+fn)
 #            tmp = fn[fn.rfind('/') + 1:fn.rfind('_')]
             tmp = fn[:fn.rfind('/')]
             tmp =tmp[tmp.rfind('/') + 1:]
             ret2.append(int(tmp))   #this is the target in test
-        log("ret2: "+str(ret2))
-        return ((torch.tensor(ret1)-128)/128.0), torch.tensor(ret2), alllen
+#        log("ret2: "+str(ret2))
+        tenserRet1 = torch.tensor(ret1)
+        r1 = ((tenserRet1-128)/128.0)
+        r2 = torch.tensor(ret2)
+        return r1, r2, alllen
 
     def __iter__(self):
         return self
@@ -167,11 +178,6 @@ class Loader:
             return ret
         else:
             raise StopIteration
-           
-train_data_tensor = list(Loader(train_data, 1.0))
-#test_data_tensor = list(RuntimeLoader(test_data))
-
-log("Tensor conversion done")
 
 def test(model, test_loader, epoch, print_progress=False):
     model.eval()
@@ -187,9 +193,9 @@ def test(model, test_loader, epoch, print_progress=False):
             
             expanded = target.view(target.size(0), -1).expand_as(label)
             compare = label.eq(expanded).float()
-            log("label: "+str(label))
-            log("expanded: "+str(expanded))
-            log("compare: "+str(compare))
+#            log("label: "+str(label))
+#            log("expanded: "+str(expanded))
+#            log("compare: "+str(compare))
             
             total += len(data)
             correct_1 += int(compare[:,:1].sum())
@@ -239,7 +245,7 @@ class RevisedNetwork(torch.nn.Module):
         self.conv_layers.append(nn.BatchNorm1d(32))
         self.conv_layers.append(nn.MaxPool1d(2)) 
 
-        self.layers.append(nn.Linear(4096 * 4, _denseSize1))
+        self.layers.append(nn.Linear(8192 * 4, _denseSize1))
         self.layers.append(nn.ReLU()) 
         self.layers.append(nn.Dropout(p=0.5))
 
@@ -265,6 +271,7 @@ class RevisedNetwork(torch.nn.Module):
 
         x = x.view(x.shape[0], -1)
         for l in self.layers:
+#            print(l)
             x = l(x)
         x = self.fc(x)
         output = F.log_softmax(x, dim=1)
@@ -279,7 +286,13 @@ optimizer = optim.Adam(hidden_model.parameters(), lr = _lr, weight_decay=1e-4)
 loss = []
 prevtime = time.time()
 prevloss = []
-#print(hidden_model)
+print(hidden_model)
+
+           
+train_data_tensor = list(Loader(train_data, 1.0))
+#test_data_tensor = list(RuntimeLoader(test_data))
+
+log("Tensor conversion done")
 for epoch in range(1, 351):
     train_loss = 0
     for batch_idx, (data, target) in enumerate(train_data_tensor):
@@ -303,8 +316,8 @@ for epoch in range(1, 351):
     prevtime = time.time()
 
     if epoch % 10 == 0:
-        do_test(0.01)
-        do_eval(0.1)
+        do_test(0.9)
+        do_eval(1.0)
         torch.save(hidden_model.state_dict(), fileprefix + ".cp.torchsave")
 
 torch.save(hidden_model.state_dict(), fileprefix + ".torchsave")

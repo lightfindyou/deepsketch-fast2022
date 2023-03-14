@@ -98,7 +98,7 @@ class RevisedNetwork(torch.nn.Module):
         self.conv_layers.append(nn.BatchNorm1d(32))
         self.conv_layers.append(nn.MaxPool1d(2)) 
 
-        self.layers.append(nn.Linear(4096 * 4, _denseSize1))
+        self.layers.append(nn.Linear(8192 * 4, _denseSize1))
         self.layers.append(nn.ReLU()) 
         self.layers.append(nn.Dropout(p=0.5))
 
@@ -215,6 +215,7 @@ class Loader:
             with open(self.dataset[i], 'rb') as f:
                 data = f.read()
             data = [int(d)for d in data]
+            data += [0] * (8192 - len(data))
             ret1[i] = data
             fn = self.dataset[i]
             ret2.append(int(fn[fn.rfind('/') + 1:fn.rfind('_')]))
@@ -319,8 +320,10 @@ def read_blkfile_to_tensor(filename, n):
     ret = []
     with open(filename, 'rb') as f:
         for i in range(n):
+#            data = f.read(4096)
             data = f.read(4096)
             data = [int(d) for d in data]
+            data += [0] * (8192 - len(data))
 #print(', '.join(map(lambda x: str(x), data)))
             ret.append(data)
     return ((torch.tensor(ret)-128)/128.0)

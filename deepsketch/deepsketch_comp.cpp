@@ -18,14 +18,17 @@ using namespace std;
 typedef pair<int, int> ii;
 
 int main(int argc, char* argv[]) {
+	int xdeltaSavedSpace = 0;
 	if (argc != 4) {
 		cerr << "usage: ./ann_inf [input_file] [script_module] [threshold]\n";
 		exit(0);
 	}
 	int threshold = atoi(argv[3]);
 
-	DATA_IO f(argv[1]);
-	f.read_file();
+	FASTCDC* cdc = new FASTCDC(4096);
+	DATA_IO f(argv[1], cdc);
+//	f.read_file();
+	f.treaverse(argv[1]);
 
 	map<XXH64_hash_t, int> dedup;
 	list<ii> dedup_lazy_recipe;
@@ -44,7 +47,7 @@ int main(int argc, char* argv[]) {
 	unsigned long long total = 0;
 	f.time_check_start();
 	for (int i = 0; i < f.N; ++i) {
-		XXH64_hash_t h = XXH64(f.trace[i], BLOCK_SIZE, 0);
+		XXH64_hash_t h = XXH64(std::get<0>(f.trace[i]), BLOCK_SIZE, 0);
 
 		if (dedup.count(h)) { // deduplication
 			dedup_lazy_recipe.push_back({i, dedup[h]});
@@ -53,7 +56,7 @@ int main(int argc, char* argv[]) {
 
 		dedup[h] = i;
 
-		if (network.push(f.trace[i], i)) {	//if match the batch size of network
+		if (network.push(std::get<0>(f.trace[i]), i)) {	//if match the batch size of network
 			vector<pair<MYHASH, int>> myhash = network.request();
 			for (int j = 0; j < myhash.size(); ++j) {
 				cout<<"procssing block: "<<i<<endl;
@@ -63,14 +66,16 @@ int main(int argc, char* argv[]) {
 				MYHASH& h = myhash[j].first;
 				int index = myhash[j].second;
 
-				int comp_self = LZ4_compress_default(f.trace[index], compressed,
-							 BLOCK_SIZE, 2 * BLOCK_SIZE);
+				int comp_self = LZ4_compress_default(std::get<0>(f.trace[index]), compressed,
+							 std::get<1>(f.trace[index]), 2 * BLOCK_SIZE);
 				int dcomp_ann = INF, dcomp_ann_ref;
 				dcomp_ann_ref = ann.request(h);
 
 				if (dcomp_ann_ref != -1) {
-					dcomp_ann = xdelta3_compress(f.trace[index], BLOCK_SIZE,
-							 f.trace[dcomp_ann_ref], BLOCK_SIZE,
+					dcomp_ann = xdelta3_compress(std::get<0>(f.trace[index]),
+							 std::get<1>(f.trace[index]),
+							 std::get<0>(f.trace[dcomp_ann_ref]),
+							 std::get<1>(f.trace[dcomp_ann_ref]),
 							 delta_compressed, 1);
 				}
 
@@ -83,6 +88,7 @@ int main(int argc, char* argv[]) {
 					set_flag(r, 0b11);
 					f.write_file(delta_compressed, dcomp_ann);
 					total += dcomp_ann;
+					xdeltaSavedSpace += BLOCK_SIZE - dcomp_ann;
 				} else {
 					if (comp_self < BLOCK_SIZE) { // self compress
 						set_size(r, (unsigned long)(comp_self - 1));
@@ -92,7 +98,8 @@ int main(int argc, char* argv[]) {
 					}
 					else { // no compress
 						set_flag(r, 0b00);
-						f.write_file(f.trace[index], BLOCK_SIZE);
+						f.write_file(std::get<0>(f.trace[index]),
+									std::get<1>(f.trace[index]));
 						total += BLOCK_SIZE;
 					}
 				}
@@ -123,12 +130,17 @@ int main(int argc, char* argv[]) {
 			MYHASH& h = myhash[j].first;
 			int index = myhash[j].second;
 
-			int comp_self = LZ4_compress_default(f.trace[index], compressed, BLOCK_SIZE, 2 * BLOCK_SIZE);
+			int comp_self = LZ4_compress_default(std::get<0>(f.trace[index]), compressed, std::get<1>(f.trace[index]), 2 * BLOCK_SIZE);
 			int dcomp_ann = INF, dcomp_ann_ref;
 			dcomp_ann_ref = ann.request(h);
 
 			if (dcomp_ann_ref != -1) {
-				dcomp_ann = xdelta3_compress(f.trace[index], BLOCK_SIZE, f.trace[dcomp_ann_ref], BLOCK_SIZE, delta_compressed, 1);
+				dcomp_ann = xdelta3_compress(std::get<0>(f.trace[index]),
+					 std::get<1>(f.trace[index]),
+					 std::get<0>(f.trace[dcomp_ann_ref]),
+					 std::get<1>(f.trace[dcomp_ann_ref]),
+					 delta_compressed,
+					 1);
 			}
 
 			set_offset(r, total);
@@ -147,7 +159,7 @@ int main(int argc, char* argv[]) {
 					total += comp_self;
 				} else { // no compress
 					set_flag(r, 0b00);
-					f.write_file(f.trace[index], BLOCK_SIZE);
+					f.write_file(std::get<0>(f.trace[index]), BLOCK_SIZE);
 					total += BLOCK_SIZE;
 				}
 			}
@@ -171,5 +183,6 @@ int main(int argc, char* argv[]) {
 	cout << "Total time: " << f.time_check_end() << "us\n";
 
 	printf("ANN %s with model %s\n", argv[1], argv[2]);
+	printf("xdelta saved space: (%.2lf%%)\n", (double)xdeltaSavedSpace*100/(f.N*BLOCK_SIZE));
 	printf("Final size: %llu (%.2lf%%)\n", total, (double)total * 100 / f.N / BLOCK_SIZE);
 }

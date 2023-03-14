@@ -46,7 +46,7 @@ add_executable(deepsketch ${PROJECT_SOURCE_DIR}/deepsketch/deepsketch_comp.cpp
 
 add_dependencies(deepsketch ngt)
 
-target_link_libraries(deepsketch "${TORCH_LIBRARIES}" "xxhash" ngt pthread)
+target_link_libraries(deepsketch "${TORCH_LIBRARIES}" xxhash ngt pthread m crypto ssl)
 #add_subdirectory("load_data")
 #
 #

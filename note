@@ -2,4 +2,4 @@ python3 ./modifyBlocks.py blocks
 python3 train_baseline.py blocks
 python3 train_hashlayer_gh.py model/model_block_4096_2048_1e-05.cp.torchsave blocks 128 2 0.005 1
 python3 model_converter_gh.py model/model_hash_block_128_4096_2048_2_0.005.cp.torchsave blocks
-./deepsketch ~/dataset/paper.tar /home/xzjin/src/deepsketch-fast2022/training/model/model_hash_block_128_4096_2048_2_0.005.cp.torchsave.pt 30
+./deepsketch /home/xzjin/dataset/Paper /home/xzjin/src/deepsketch-fast2022/training/model/model_hash_block_128_4096_2048_2_0.005.cp.torchsave.pt 30

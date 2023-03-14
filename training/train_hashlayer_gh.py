@@ -179,6 +179,7 @@ class RuntimeLoader:
                 with open(self.dataset[num + i], 'rb') as f:
                     data = f.read()
                 data = [int(d) for d in data]
+                data += [0] * (8192 - len(data))
                 ret1[i] = data
                 ret2.append(int(self.dataset[num + i][self.dataset[num + i].rfind('/') + 1:self.dataset[num + i].rfind('_')]))
             ret = [(torch.tensor(ret1) - 128) / 128.0, torch.tensor(ret2)]
@@ -218,6 +219,7 @@ class Loader:
             with open(self.dataset[i], 'rb') as f:
                 data = f.read()
             data = [int(d)for d in data]
+            data += [0] * (8192 - len(data))
             ret1[i] = data
             fn = self.dataset[i]
             ret2.append(int(fn[fn.rfind('/') + 1:fn.rfind('_')]))
@@ -283,8 +285,8 @@ def test(model, test_loader, epoch, print_progress=False):
         cnt = 0
         for data, target in test_loader:
             output, _, _ = model(data)
-#            prob, label = output.topk(5, 1, True, True)
-            prob, label = output.topk(1, 1, True, True)
+            prob, label = output.topk(5, 1, True, True)
+#            prob, label = output.topk(1, 1, True, True)
             
             expanded = target.view(target.size(0), -1).expand_as(label)
             compare = label.eq(expanded).float()
@@ -334,12 +336,13 @@ class RevisedNetwork(torch.nn.Module):
         self.conv_layers.append(nn.BatchNorm1d(16))
         self.conv_layers.append(nn.MaxPool1d(2)) 
 
-        self.conv_layers.append(nn.Conv1d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1, bias=True))
+        self.conv_layers.append(nn.Conv1d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1, bias=True                 ))
         self.conv_layers.append(nn.ReLU()) 
         self.conv_layers.append(nn.BatchNorm1d(32))
         self.conv_layers.append(nn.MaxPool1d(2)) 
 
-        self.layers.append(nn.Linear(4096 * 4, _denseSize1))
+#        self.layers.append(nn.Linear(4096 * 4, _denseSize1))
+        self.layers.append(nn.Linear(8192 * 4, _denseSize1))
         self.layers.append(nn.ReLU()) 
         self.layers.append(nn.Dropout(p=0.5))
 
@@ -446,7 +449,7 @@ for epoch in range(1, 351):
         loss = criterion(   #here loss calculate the cross entrpy loss of outputs and target,
                             # but what is output and target?
                 outputs,    # the cross entropy between output and target and the deviate of feature from 1.
-                target,     #                     (the final output)                  (the code before hash)
+                target,     # (the final output) (the code before hash)
                 feature)
         train_loss += loss.item()
 

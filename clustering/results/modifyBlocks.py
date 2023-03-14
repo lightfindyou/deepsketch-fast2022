@@ -35,7 +35,7 @@ dirNum = len(dirs)
 for i in range(dirNum):
     files = glob(os.path.join(dirs[i], '*'))
     fileNum = len(files)
-    if fileNum < 4 :
+    if fileNum < 20 :
         targetFileNum = random.randint(21,39)
         #generage new files
         for j in range(fileNum, targetFileNum):
@@ -44,16 +44,29 @@ for i in range(dirNum):
             destFileName = os.path.join(dirs[i], "0000"+str(j))
             shutil.copyfile(srcFileName, destFileName)
             changeNum = random.randint(1,3)
-            f = open(destFileName, "r+")
-            #update each new file with random data
+            f = open(destFileName, "rb+")
+            originalFileSize = os.path.getsize(destFileName)
+            fileSize = originalFileSize 
+            #update each new file with random data for 1~3 times
             for k in range (changeNum):
-                changeLen = random.randint(1, 200)
+                changeLen = random.randint(1, min(200, originalFileSize//3))
 #                data = random.randbytes(changeLen)
-                data =str(os.urandom(changeLen))
-                changePos = random.randint(0, os.path.getsize(destFileName) - len(data) - 1)
+                cbytes = os.urandom(changeLen)
+                changePos = random.randint(0, fileSize - len(cbytes) - 1)
                 f.seek(changePos)
-                f.write(data)
+                overwrite = random.randint(0, 1) or fileSize + len(cbytes) > 8192
+                if( overwrite ): #overwrite data
+                    f.write(cbytes)
+                else:
+                    fileData = f.read()
+                    f.seek(changePos)
+                    f.write(cbytes)
+                    f.write(fileData)
+                    fileSize += len(cbytes)
             f.close()
+#            newFileSize = os.path.getsize(destFileName)
+#            if(newFileSize > 8192):
+#                print("file: "+destFileName)
         files = glob(os.path.join(dirs[i], '*'))
         curFileNum = len(files)
         log("%-*s: file number %d to %d" %(20, str(dirs[i]), fileNum, curFileNum) )
