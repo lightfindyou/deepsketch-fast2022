@@ -4,3 +4,4 @@ python3 train_hashlayer_gh.py model/model_block_4096_2048_1e-05.cp.torchsave blo
 python3 model_converter_gh.py model/model_hash_block_128_4096_2048_2_0.005.cp.torchsave blocks
 ./deepsketch /home/xzjin/dataset/Paper /home/xzjin/src/deepsketch-fast2022/training/model/model_hash_block_128_4096_2048_2_0.005.cp.torchsave.pt 80
 ./deepsketch /home/xzjin/backupData/Paper_20M/ /home/xzjin/src/deepsketch-fast2022/training/model/model_hash_block_128_4096_2048_2_0.005.cp.torchsave.pt 80
+./fineANN /home/xzjin/backupData/Paper_20M 80

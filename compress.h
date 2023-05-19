@@ -199,8 +199,8 @@ struct DATA_IO {
 
 DATA_IO::DATA_IO(char* name, FASTCDC* cdc) {
 	sprintf(fileName, "%s", name);
-	sprintf(outputFileName, "%s_output", name);
-	sprintf(recipeName, "%s_recipe", name);
+	sprintf(outputFileName, "./_output");
+	sprintf(recipeName, "./_recipe");
 	this->cdc = cdc;
 	out = NULL;
 }

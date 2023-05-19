@@ -45,8 +45,8 @@ int main(int argc, char* argv[]) {
     // Initing index
 //    hnswlib::L2Space space(dim);
 //    hnswlib::HammingSpace space(dim);
-    hnswlib::AsymHammingSpace space(dim);
-//    hnswlib::AsymWeightHammingSpace space(dim);
+//    hnswlib::AsymHammingSpace space(dim);
+    hnswlib::AsymWeightHammingSpace space(dim);
 
     hnswlib::HierarchicalNSW<float>* alg_hnsw = new hnswlib::HierarchicalNSW<float>(&space, max_elements, M, ef_construction);
 

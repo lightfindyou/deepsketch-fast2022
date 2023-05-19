@@ -23,7 +23,8 @@
 #define EFFCTIVE_LEN 191
 #define WINDOW_SIZE 4
 #define WINDOW_MASK ((1ULL<<(WINDOW_SIZE*8)) - 1)
-typedef uint32_t* MYHASH;
+//typedef uint32_t* MYHASH;
+typedef unsigned char* MYHASH;
 
 class Gear{
     public:
@@ -122,6 +123,7 @@ int Gear::gear_chunk_data(unsigned char *p, int n, MYHASH hash){
         i++;
         if(!(fingerprint & Gear::mask)){
             int index = (fingerprint & WINDOW_MASK)%EFFCTIVE_LEN;
+//            int index = (fingerprint )%EFFCTIVE_LEN;
             setbit(hash, index);
             int weightOffset = HASH_SIZE/8 + index;
             hash[weightOffset] += 1;
@@ -171,7 +173,9 @@ bool NetworkHash::push(char* ptr, int size, int label) {
         retHash.clear();
     }
 
-    MYHASH hash = (uint32_t*)calloc(FEA_LEN, sizeof(uint32_t));
+    //256/8* 32bit-uint + 256 32bit-uint
+//    MYHASH hash = (uint32_t*)calloc(FEA_LEN, sizeof(uint32_t));
+    MYHASH hash = (unsigned char*)calloc(FEA_LEN, sizeof(unsigned char));
 //    MYHASH *hash = new std::array<uint32, FEA_LEN>(0x0);
 //    std::bitset<HASH_SIZE> hash(0x0);
 //    std::array<int, HASH_SIZE> weight = {0};
