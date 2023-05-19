@@ -74,6 +74,9 @@ deepsketch/build/
 training/model/
 training/preprocessed_data/
 clustering/results/
+training/blocks/
 
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,cmake,linux
+deepsketch/model_hash_block_128_4096_2048_2_0.005.cp.torchsave.pt.FSC.backup
+training/blocks

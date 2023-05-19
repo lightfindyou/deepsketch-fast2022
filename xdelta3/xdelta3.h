@@ -25,9 +25,17 @@
 #ifndef _XDELTA3_H_
 #define _XDELTA3_H_
 
+#ifndef _POSIX_SOURCE
 #define _POSIX_SOURCE
+#endif  //_POSIX_SOURCE
+
+#ifndef _ISOC99_SOURCE
 #define _ISOC99_SOURCE
+#endif //_ISOC99_SOURCE
+
+#ifndef _C99_SOURCE
 #define _C99_SOURCE
+#endif  //_C99_SOURCE
 
 #if HAVE_CONFIG_H
 #include "config.h"

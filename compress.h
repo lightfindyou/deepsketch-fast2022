@@ -70,27 +70,23 @@ enum{
     Mask_128KB
 };
 
+//limit the mask to lower 4 byte to constrain window size
 uint64_t g_condition_mask[] = {
     //Do not use 1-32B, for aligent usage
         0x0000000000000000,// 1B
         0x0000000001000000,// 2B
         0x0000000003000000,// 4B
-        0x0000010003000000,// 8B
-        0x0000090003000000,// 16B
-        0x0000190003000000,// 32B
+        0x0000000013000000,// 8B
+        0x0000000093000000,// 16B
+        0x0000000093001000,// 32B
 
-        0x0000590003000000,// 64B
-        0x0000590003100000,// 128B
-        0x0000590003500000,// 256B
-        0x0000590003510000,// 512B
-        0x0000590003530000,// 1KB
-        0x0000590103530000,// 2KB
-        0x0000d90103530000,// 4KB
-        0x0000d90303530000,// 8KB
-        0x0000d90303531000,// 16KB
-        0x0000d90303533000,// 32KB
-        0x0000d90303537000,// 64KB
-        0x0000d90703537000// 128KB
+        0x0000000093005000,// 64B
+        0x0000000093005100,// 128B
+        0x0000000093005500,// 256B
+        0x0000000093015500,// 512B
+        0x0000000093035500,// 1KB
+        0x0000000093035510,// 2KB
+        0x000000009303d510,// 4KB
 };
 
 
@@ -190,13 +186,15 @@ struct DATA_IO {
 	void read_file();
 
 	FASTCDC* cdc;
-	void readFile(char* fileName, int s);
+	void readFile(char* fileName, unsigned long s);
 	void treaverse(char* path);
 	inline void write_file(char* data, int size);
 	inline void recipe_insert(RECIPE r);
 	void recipe_write();
 	void time_check_start();
-	long long time_check_end();
+	long long time_check_end(); 
+	long fileNum = 0;
+	long totalSize = 0;
 };
 
 DATA_IO::DATA_IO(char* name, FASTCDC* cdc) {
@@ -236,26 +234,30 @@ void DATA_IO::read_file() {
 //	fclose(f);
 }
 
-void DATA_IO::readFile(char* fileName, int s) {
-	int fileSize = s;
+void DATA_IO::readFile(char* fileName, unsigned long s) {
+	unsigned long fileSize = s;
 //	cout<<"chunking file:"<<fileName<<" file size: "<<s<<endl;
 	FILE* f = fopen(fileName, "rb");
 	if(!f){
 		perror("open file failed");
 	}
 	char* data = new char[s+1024];
+	char* addrBegin = data;
+	char* addrEnd = &data[s+1024];
 	fileSize = fread(data, 1, s, f);
 	while (fileSize>0) {
 		int chunkSize = this->cdc->fastcdc_chunk_data((unsigned char*)data, fileSize);
-		fileSize -= chunkSize;
-		data = &data[chunkSize];
 //		cout<<"chunking size:"<<chunkSize<<" left size: "<<fileSize<<endl;
 		auto chunk = std::make_tuple(data, chunkSize);
 		trace.push_back(chunk);
+
+		data = &data[chunkSize];
+		fileSize -= chunkSize;
 		N++;
 	}
 	fclose(f);
-//	cout<<"chunking file:"<<fileName<<"over"<<endl;
+//	std::cout<<"chunking file:"<<fileName<<" over, chunks number: "<<N<<std::endl;
+//	printf("addr range: %lx ~ %lx\n", addrBegin, addrEnd);
 }
 
 void joinPath(char* path, char* file){
@@ -302,7 +304,9 @@ void DATA_IO::treaverse(char* path){
                     treaverse(filePath);
                 }else{
 					readFile(filePath, states.st_size);
-//	                printf("%s/%s\n",name,ent->d_name);
+					this->fileNum++;
+					this->totalSize += states.st_size;
+//	                printf("%s/%s, fileNum:%5d, total Size:%ld\n",filePath, ent->d_name, this->fileNum, this->totalSize);
 				}
             };
 

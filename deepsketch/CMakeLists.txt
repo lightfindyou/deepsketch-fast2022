@@ -63,3 +63,25 @@ target_link_libraries(deepsketch "${TORCH_LIBRARIES}" xxhash ngt pthread m crypt
 #  CXX_STANDARD 20
 #  CXX_STANDARD_REQUIRED YES
 #)
+
+add_executable(fineANN ${PROJECT_SOURCE_DIR}/deepsketch/fineANN.cpp
+ ${PROJECT_SOURCE_DIR}/xdelta3/xdelta3.c
+ ${PROJECT_SOURCE_DIR}/lz4.c
+# /usr/local/include/NGT/Index.h
+# ${PROJECT_SOURCE_DIR}/NGT/Tree.cpp
+# ${PROJECT_SOURCE_DIR}/NGT/Thread.cpp
+# ${PROJECT_SOURCE_DIR}/NGT/Index.cpp
+# ${PROJECT_SOURCE_DIR}/NGT/SharedMemoryAllocator.cpp
+# ${PROJECT_SOURCE_DIR}/NGT/Command.cpp
+# ${PROJECT_SOURCE_DIR}/NGT/Capi.cpp
+# ${PROJECT_SOURCE_DIR}/NGT/Version.cpp
+# ${PROJECT_SOURCE_DIR}/NGT/Graph.cpp
+# ${PROJECT_SOURCE_DIR}/NGT/MmapManager.cpp
+# ${PROJECT_SOURCE_DIR}/NGT/Node.cpp
+# ${PROJECT_SOURCE_DIR}/NGT/ArrayFile.cpp
+)
+
+
+add_dependencies(fineANN ngt)
+
+target_link_libraries(fineANN "${TORCH_LIBRARIES}" xxhash ngt pthread m crypto ssl)

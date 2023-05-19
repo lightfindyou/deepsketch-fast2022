@@ -133,7 +133,7 @@ class RevisedNetwork(torch.nn.Module):
 
 print("Model Loading")
 model = RevisedNetwork()
-print(model)
+#print(model)
 model.load_state_dict(torch.load(filename))
 model.eval()
 
@@ -160,15 +160,16 @@ class InferNetwork(torch.nn.Module):
         return x
 
 # Save InferNet 
-print("Model Saving to PT")
 infer = InferNetwork()
 infer.conv_layers = model.conv_layers
 #here only the first layer, so the dimision is not suitable.
 infer.layer = model.layers[0]
 #infer.fc_plus = model.fc_plus 
 infer.eval()
+print(infer)
 sm = torch.jit.script(infer)
 sm.save("{}.pt".format(filename))
+print("Model Saving to PT")
 
 #sys.exit()
 
